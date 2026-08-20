@@ -17,7 +17,6 @@ from app.schemas import (
 app = FastAPI(title="Hospital Management System API")
 
 
-
 # ==================================================
 # PATIENTS
 # ==================================================
@@ -58,11 +57,7 @@ async def get_patient(
 ):
     """Return a patient by ID."""
 
-    patient = (
-        db.query(Patient)
-        .filter(Patient.id == patient_id)
-        .first()
-    )
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
 
     if patient is None:
         raise HTTPException(
@@ -113,11 +108,7 @@ async def get_doctor(
 ):
     """Return a doctor by ID."""
 
-    doctor = (
-        db.query(Doctor)
-        .filter(Doctor.id == doctor_id)
-        .first()
-    )
+    doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
 
     if doctor is None:
         raise HTTPException(
@@ -157,11 +148,7 @@ async def create_appointment(
     """Create an appointment after validating patient and doctor."""
 
     # Check that the patient exists.
-    patient = (
-        db.query(Patient)
-        .filter(Patient.id == appointment.patient_id)
-        .first()
-    )
+    patient = db.query(Patient).filter(Patient.id == appointment.patient_id).first()
 
     if patient is None:
         raise HTTPException(
@@ -170,11 +157,7 @@ async def create_appointment(
         )
 
     # Check that the doctor exists.
-    doctor = (
-        db.query(Doctor)
-        .filter(Doctor.id == appointment.doctor_id)
-        .first()
-    )
+    doctor = db.query(Doctor).filter(Doctor.id == appointment.doctor_id).first()
 
     if doctor is None:
         raise HTTPException(
@@ -206,11 +189,7 @@ async def get_appointment(
 ):
     """Return an appointment by ID."""
 
-    appointment = (
-        db.query(Appointment)
-        .filter(Appointment.id == appointment_id)
-        .first()
-    )
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
 
     if appointment is None:
         raise HTTPException(

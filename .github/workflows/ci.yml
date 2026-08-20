@@ -39,26 +39,43 @@ jobs:
       - name: Gate 3 - Bandit Security
         run: bandit -r app
 
-      - name: Gate 4 - Docker Build
-        run: |
-          docker build             -t "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest" .
+      # -----------------------------
+      # Gate 4 - Build Docker Image
+      # -----------------------------
 
-      - name: Gate 5 - Docker Hub Login
+      - name: Gate 4 - Build Docker image
+        run: |
+          docker build -t myapp:latest .
+
+      # -----------------------------
+      # Gate 5 - Docker Hub Publishing
+      # -----------------------------
+
+      - name: Gate 5 - Login to Docker Hub
         if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Gate 5 - Docker Hub Push
+      - name: Gate 5 - Tag and Push Docker image
         if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
         run: |
-          docker push             "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+          docker tag myapp:latest \
+            "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+
+          docker push \
+            "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+
+      # -----------------------------
+      # Gate 6 - Verify Docker Hub Image
+      # -----------------------------
 
       - name: Gate 6 - Verify Docker Hub Image
         if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
         run: |
-          docker pull             "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+          docker pull \
+            "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
 
           echo "Docker image successfully published:"
           echo "https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/myapp"
