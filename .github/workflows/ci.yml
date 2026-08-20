@@ -1,0 +1,64 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pylint bandit httpx
+
+      - name: Run database migrations
+        run: PYTHONPATH=. alembic -c alembic.ini upgrade head
+
+      - name: Gate 1 - Pytest Coverage
+        run: PYTHONPATH=. pytest tests --cov=app --cov-report=term-missing --cov-fail-under=85
+
+      - name: Gate 2 - Pylint
+        run: PYTHONPATH=. pylint app
+
+      - name: Gate 3 - Bandit Security
+        run: bandit -r app
+
+      - name: Gate 4 - Docker Build
+        run: |
+          docker build             -t "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest" .
+
+      - name: Gate 5 - Docker Hub Login
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Gate 5 - Docker Hub Push
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        run: |
+          docker push             "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+
+      - name: Gate 6 - Verify Docker Hub Image
+        if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'master')
+        run: |
+          docker pull             "${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest"
+
+          echo "Docker image successfully published:"
+          echo "https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/myapp"

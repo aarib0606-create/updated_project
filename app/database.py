@@ -1,0 +1,30 @@
+"""Database configuration for the hospital management system API."""
+
+import os
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hospital.db")
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+SessionLocal = sessionmaker(  # pylint: disable=invalid-name
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
+Base = declarative_base()
+
+
+def get_db():
+    """Provide a database session and close it after the request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
